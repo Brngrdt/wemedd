@@ -394,6 +394,33 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
 .acmsg{font-size:14px;min-height:20px}.acmsg.bad{color:var(--bad)}.acmsg.ok{color:var(--good)}
 .acstat{background:var(--bg);border-radius:20px;padding:14px;font-size:14px}
 
+/* мини-календарь на экране задач */
+.mini{margin:12px 0 10px;--row:34px}
+.mc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.mc-head .nav{display:flex;align-items:center;gap:6px;min-width:0}
+.mc-head strong{font:700 16px var(--f-display);white-space:nowrap}
+.mc-head .ic{width:32px;height:32px;min-width:32px;font-size:19px}
+.mc-head .btn{min-height:34px;padding:0 14px;font-size:13px}
+.mini .cal{gap:2px}
+.mini .dow{padding:0 0 3px;font-size:9.5px}
+.mini .day{border-radius:10px;padding-top:2px}
+.mini .day .n{font-size:12.5px;width:22px;height:22px}
+.mini .day.wk{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.mini .day.sel{box-shadow:inset 0 0 0 2px var(--fg)}
+.day .td{position:absolute;left:50%;bottom:3px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent);z-index:1}
+.mc-lab{margin:8px 2px 0;font-size:13px;font-weight:700;color:var(--muted)}
+
+/* окна дня: отметка и заметка */
+.daysheet{gap:14px;padding-top:8px}
+.daysheet .chips.big{gap:8px}
+.daysheet .chip{min-height:46px;padding:0 16px 0 14px;font-size:14.5px}
+.big-in{min-height:58px;font-size:17px;font-weight:600;border-radius:20px;padding:0 18px}
+.big-btn{min-height:58px;font-size:16px;width:100%}
+.note-big{min-height:min(220px,38dvh);height:min(220px,38dvh);resize:none;border-radius:20px;padding:14px 16px;font-size:16.5px;line-height:1.5}
+.note-btn{display:block;width:100%;text-align:left;margin:2px 0 8px;border:0;background:var(--bg);color:var(--muted);border-radius:16px;padding:12px 14px;min-height:40px;font:500 13.5px/1.35 var(--f-body);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.note-btn.has{color:var(--fg)}
+@media (max-width:899px){body[data-screen="cal"] .calwrap{align-items:stretch}body[data-screen="cal"] .cal-card{width:100%}}
+
 </style>
 </head>
 <body data-screen="cal">
@@ -444,13 +471,11 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
             <button type="button" data-scope="month" aria-pressed="false">Месяц</button>
             <button type="button" data-scope="range" aria-pressed="false">Период</button>
           </div>
-          <div class="viewbar" id="tNav" style="margin:14px 0 12px">
-            <div class="nav2">
-              <button type="button" class="ic" id="tPrev" aria-label="Назад">&#8249;</button>
-              <strong id="tLabel"></strong>
-              <button type="button" class="ic" id="tNext" aria-label="Вперёд">&#8250;</button>
-            </div>
-            <button type="button" class="btn ghost sm" id="tToday">Сегодня</button>
+          <div id="tNav" class="mini">
+            <div class="mc-head"><div class="nav"><button type="button" class="ic" id="tPrev" aria-label="Предыдущий месяц">&#8249;</button><strong id="mLabel"></strong><button type="button" class="ic" id="tNext" aria-label="Следующий месяц">&#8250;</button></div><button type="button" class="btn ghost sm" id="tToday">Сегодня</button></div>
+            <div class="cal" aria-hidden="true"><div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div><div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div></div>
+            <div class="cal" id="mGrid"></div>
+            <p class="mc-lab"><span id="tLabel"></span></p>
           </div>
           <form id="tAddForm" class="tadd" autocomplete="off">
             <div class="addline"><input id="tAddText" type="text" maxlength="140" enterkeyhint="done" aria-label="Новая задача" placeholder="Добавить дело на этот день…"><button type="submit" class="btn" id="tAddGo">Добавить</button></div>
@@ -577,6 +602,9 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
   </div>
 </div>
 <!-- Оформление -->
+<div class="overlay" id="dayOv" hidden>
+  <div class="sheet daysheet" id="dayOvBody" role="dialog" aria-modal="true"></div>
+</div>
 <div class="overlay" id="palOv" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="palTitle">
     <div class="sh-head"><h2 class="h sm" id="palTitle">Оформление</h2><button type="button" class="btn ghost sm" data-close>Готово</button></div>
@@ -763,7 +791,7 @@ function saveSync(){try{localStorage.setItem('wemed.sync',JSON.stringify(sync))}
 var S=load();
 if(!S){S=seedData();save()}
 var td=today();
-var ui={ac:{mode:'in',msg:'',kind:'',email:'',busy:false},barHide:false,screen:'cal',cal:{y:td.getFullYear(),m:td.getMonth()},sel:ymd(td),evOpen:false,evType:'imp',evEnd:null,evFrom:null,evTitle:'',tview:'list',scope:'day',tsel:ymd(td),pp:7,gr:{val:'5',open:{}},mon:{y:td.getFullYear(),m:td.getMonth()},mf:'all',tcat:'study',qa:{force:null,date:null,end:null,scope:null,cat:null,ev:'imp',more:false},qaDef:ymd(td),qaScope:'day'};
+var ui={sheet:null,ac:{mode:'in',msg:'',kind:'',email:'',busy:false},barHide:false,screen:'cal',cal:{y:td.getFullYear(),m:td.getMonth()},sel:ymd(td),evOpen:false,evType:'imp',evEnd:null,evFrom:null,evTitle:'',tview:'list',scope:'day',tsel:ymd(td),pp:7,gr:{val:'5',open:{}},mon:{y:td.getFullYear(),m:td.getMonth()},mf:'all',tcat:'study',qa:{force:null,date:null,end:null,scope:null,cat:null,ev:'imp',more:false},qaDef:ymd(td),qaScope:'day'};
 var openOv=null,lastFocus=null,noteKey=null,noteT;
 
 /* ---------- мелочи интерфейса ---------- */
@@ -869,10 +897,9 @@ function moveTaskCur(id){
 /* ---------- календарь и день ---------- */
 function evCovers(e,k){return e.date<=k&&k<=(e.end||e.date)}
 function dayEvents(k){return S.events.filter(function(e){return evCovers(e,k)}).sort(function(a,b){return (a.end?1:0)-(b.end?1:0)||a.ts-b.ts})}
-function renderCalGrid(){
-  var y=ui.cal.y,m=ui.cal.m,first=new Date(y,m,1),off=wd(first),dim=new Date(y,m+1,0).getDate(),tk=ymd(today());
+function calHtml(y,m,o){
+  var first=new Date(y,m,1),off=wd(first),dim=new Date(y,m+1,0).getDate(),tk=ymd(today());
   var fk=ymd(first),lk=ymd(new Date(y,m,dim));
-  $('#cLabel').textContent=MONTHS[m]+' '+y;
   var total=Math.ceil((off+dim)/7)*7,single={},fill={},rib={},laneEnd=[];
   S.events.forEach(function(e){if(!e.end&&e.date>=fk&&e.date<=lk)(single[e.date]=single[e.date]||[]).push(e.type)});
   S.events.filter(function(e){return e.end&&e.end>=fk&&e.date<=lk}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.ts-b.ts}).forEach(function(e){
@@ -899,44 +926,73 @@ function renderCalGrid(){
     }
     var label=dn+' '+MONTHS_GEN[m]+(names.length?', '+names.join(', '):'')+(note?', есть заметка':'')+(st.total?', задач '+st.total:'');
     var rb='';
-    h+='<button type="button" class="day'+(cols.length?' has':'')+(k===tk?' today':'')+(k===ui.sel?' sel':'')+'" data-day="'+k+'"'+style+' aria-label="'+esc(label)+'"'+(k===ui.sel?' aria-pressed="true"':'')+'><span class="n">'+dn+'</span>'+rb+(note?'<i class="nt"></i>':'')+'</button>';
+    h+='<button type="button" class="day'+(cols.length?' has':'')+(k===tk?' today':'')+(k===o.sel?' sel':'')+(o.wk&&k>=o.wk[0]&&k<=o.wk[1]?' wk':'')+'" '+o.attr+'="'+k+'"'+style+' aria-label="'+esc(label)+'"'+(k===o.sel?' aria-pressed="true"':'')+'><span class="n">'+dn+'</span>'+rb+(note?'<i class="nt"></i>':'')+(o.dots&&o.dots[k]?'<i class="td"></i>':'')+'</button>';
   }
-  $('#cGrid').innerHTML=h;
+  return h;
+}
+function renderCalGrid(){
+  var y=ui.cal.y,m=ui.cal.m;
+  $('#cLabel').textContent=MONTHS[m]+' '+y;
+  $('#cGrid').innerHTML=calHtml(y,m,{sel:ui.sel,attr:'data-day'});
+}
+function renderMini(){
+  var y=ui.cal.y,m=ui.cal.m,sc=ui.scope,dots={};
+  $('#mLabel').textContent=MONTHS[m]+' '+y;
+  S.tasks.forEach(function(t){if(t.done)return;if(t.scope==='day')dots[t.date]=1;else if(t.scope==='range'){for(var d=parse(t.date),n=0;ymd(d)<=t.end&&n<400;d=addDays(d,1),n++)dots[ymd(d)]=1}});
+  $('#mGrid').innerHTML=calHtml(y,m,{sel:sc==='month'?null:ui.tsel,attr:'data-mday',dots:dots,wk:sc==='week'?[wkS(ui.tsel),wkE(ui.tsel)]:null});
 }
 function evForm(){
-  var h='<div class="evadd"><div class="chips">'+EVT.map(function(e){return '<button type="button" class="chip" data-evtype="'+e.id+'" aria-pressed="'+(ui.evType===e.id)+'"><i class="dot" style="--c:var('+e.tok+')"></i>'+e.name+'</button>'}).join('')+'</div>'
-   +'<input id="evTitle" type="text" maxlength="60" enterkeyhint="done" placeholder="Название, например: цикл по дерматовенерологии" aria-label="Название события" value="'+esc(ui.evTitle||'')+'">'
-   +'<div class="chips"><button type="button" class="chip" data-evper aria-pressed="'+(!!ui.evEnd)+'">Период из нескольких дней</button></div>';
-  if(ui.evEnd)h+='<div class="g2"><div><label class="lab" for="evFrom">С</label><input id="evFrom" type="date" value="'+esc(ui.evFrom||ui.sel)+'"></div><div><label class="lab" for="evTo">По</label><input id="evTo" type="date" value="'+esc(ui.evEnd)+'"></div></div>';
-  return h+'<button type="button" class="btn block" id="evAdd">Отметить в календаре</button></div>';
+  var h='<div class="chips big">'+EVT.map(function(e){return '<button type="button" class="chip" data-evtype="'+e.id+'" aria-pressed="'+(ui.evType===e.id)+'"><i class="dot" style="--c:var('+e.tok+')"></i>'+e.name+'</button>'}).join('')+'</div>'
+   +'<input id="evTitle" class="big-in" type="text" maxlength="60" enterkeyhint="done" placeholder="Название, например: цикл по дерматовенерологии" aria-label="Название события" value="'+esc(ui.evTitle||'')+'">'
+   +'<div class="chips big"><button type="button" class="chip" data-evper aria-pressed="'+(!!ui.evEnd)+'">Период из нескольких дней</button></div>';
+  if(ui.evEnd)h+='<div class="g2"><div><label class="lab" for="evFrom">С</label><input id="evFrom" class="big-in" type="date" value="'+esc(ui.evFrom||ui.sel)+'"></div><div><label class="lab" for="evTo">По</label><input id="evTo" class="big-in" type="date" value="'+esc(ui.evEnd)+'"></div></div>';
+  return h;
 }
-function autoGrow(ta){if(!ta)return;ta.style.height='auto';ta.style.height=Math.min(120,Math.max(44,ta.scrollHeight))+'px'}
+function renderDaySheet(){
+  var d=parse(ui.sel),box=$('#dayOvBody'),h;
+  if(ui.sheet==='note'){
+    h='<div class="sh-head"><h2 class="h sm">Заметка · '+esc(dayShort(d))+'</h2><button type="button" class="btn ghost sm" data-close>Готово</button></div>'
+     +'<textarea id="noteArea" class="note-big" maxlength="2000" placeholder="Что важно помнить об этом дне…" aria-label="Заметка"></textarea><p class="saved">Сохраняется автоматически</p>';
+  }else{
+    h='<div class="sh-head"><h2 class="h sm">Отметка · '+esc(dayShort(d))+'</h2><button type="button" class="btn ghost sm" data-close>Закрыть</button></div>'+evForm()
+     +'<button type="button" class="btn block big-btn" id="evAdd">Отметить в календаре</button>';
+  }
+  box.innerHTML=h;
+  if(ui.sheet==='note'){noteKey=ui.sel;$('#noteArea').value=S.notes[ui.sel]||''}
+}
+function openDaySheet(mode){
+  flushNote();ui.sheet=mode;
+  if(mode==='ev'){ui.evEnd=null;ui.evFrom=null;ui.evTitle=''}
+  renderDaySheet();
+  showOverlay('dayOv',mode==='note'?'#noteArea':null);
+}
+function autoGrow(ta){if(!ta||ta.closest('.sheet'))return;ta.style.height='auto';ta.style.height=Math.min(120,Math.max(44,ta.scrollHeight))+'px'}
 function renderDay(){
   var k=ui.sel,d=parse(k),tk=ymd(today());
   var tasks=S.tasks.filter(function(t){return t.scope==='day'&&t.date===k}).sort(sortTasks),done=tasks.filter(function(t){return t.done}).length;
   var run=S.tasks.filter(function(t){return t.scope==='range'&&t.date<=k&&k<=t.end}).sort(sortTasks);
   var ev=dayEvents(k),over=(k===tk)?overdueCount():0;
-  var h='<div class="card tight dpanel"><div class="day-h"><div><span class="eyebrow" lang="la">'+WD_LAT[wd(d)]+'</span><h2 class="h">'+esc(dayShort(d))+'</h2></div><div class="dh-r">'+(tasks.length?'<span class="count num">'+done+'/'+tasks.length+'</span>':'')+'<button type="button" class="btn ghost sm" data-evopen aria-expanded="'+ui.evOpen+'">'+(ui.evOpen?'Скрыть':'+ Отметка')+'</button></div></div><div class="dp-scroll">';
+  var h='<div class="card tight dpanel"><div class="day-h"><div><span class="eyebrow" lang="la">'+WD_LAT[wd(d)]+'</span><h2 class="h">'+esc(dayShort(d))+'</h2></div><div class="dh-r">'+(tasks.length?'<span class="count num">'+done+'/'+tasks.length+'</span>':'')+'<button type="button" class="btn ghost sm" data-evopen>+ Отметка</button></div></div><div class="dp-scroll">';
+  var nt=S.notes[k]||'';
+  h+='<button type="button" class="note-btn'+(nt?' has':'')+'" data-noteopen>'+(nt?esc(nt.length>110?nt.slice(0,110)+'…':nt):'Заметка к этому дню…')+'</button>';
   if(over)h+='<button type="button" class="late-link" data-late>Просрочено задач: '+over+'. Разобрать</button>';
-  if(ui.evOpen)h+=evForm();
   if(ev.length)h+='<div class="evchips">'+ev.map(function(e){var t=evtBy(e.type);return '<span class="evchip" style="--c:var('+t.tok+')"><i class="dot"></i><span><b>'+esc(t.name)+'</b>'+(e.title?': '+esc(e.title):'')+(e.end?' <small>'+esc(rangeText(e.date,e.end))+'</small>':'')+'</span><button type="button" class="del" data-evdel="'+e.id+'" aria-label="Убрать отметку">&times;</button></span>'}).join('')+'</div>';
   var rows=tasks.concat(run);
   h+=rows.length?'<ul>'+rows.map(function(t){return taskRow(t,{compact:true})}).join('')+'</ul>':(ev.length?'':'<p class="empty"><b>Дел на этот день нет.</b> Нажмите «+» внизу и впишите, что нужно сделать.</p>');
-  h+='<textarea id="noteArea" class="note-in" rows="1" maxlength="2000" placeholder="Заметка к этому дню…" aria-label="Заметка"></textarea></div></div>';
+  h+='</div></div>';
   $('#dayPanel').innerHTML=h;
-  noteKey=k;var ta=$('#noteArea');ta.value=S.notes[k]||'';
 }
 function renderCalScreen(){renderCalGrid();renderDay()}
 function flushNote(){
-  clearTimeout(noteT);var ta=$('#noteArea');if(!ta||!noteKey)return;
+  clearTimeout(noteT);var ta=$('#noteArea');if(!ta||!noteKey||ui.sheet!=='note')return;
   var v=ta.value;if(v.trim())S.notes[noteKey]=v;else delete S.notes[noteKey];save();
 }
 function keepEv(){var ti=$('#evTitle');if(ti)ui.evTitle=ti.value}
-function selectDay(k){flushNote();ui.sel=k;ui.evOpen=false;renderCalScreen()}
+function selectDay(k){flushNote();ui.sel=k;ui.tsel=k;ui.evOpen=false;renderCalScreen()}
 function shiftCal(dir){
   flushNote();var d=new Date(ui.cal.y,ui.cal.m+dir,1),n=today();
   ui.cal={y:d.getFullYear(),m:d.getMonth()};
-  ui.sel=(d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth())?ymd(n):ymd(d);
+  ui.sel=(d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth())?ymd(n):ymd(d);ui.tsel=ui.sel;
   ui.evOpen=false;renderCalScreen();
 }
 function addEventFromPanel(){
@@ -950,8 +1006,8 @@ function addEventFromPanel(){
   }
   S.events.push({id:uid(),date:from,end:end,type:ui.evType,title:title,ts:Date.now(),demo:false});save();
   ui.evOpen=false;ui.evEnd=null;ui.evFrom=null;ui.evTitle='';
-  ui.sel=from;var fd=parse(from);ui.cal={y:fd.getFullYear(),m:fd.getMonth()};
-  renderCalScreen();
+  ui.sel=from;ui.tsel=from;var fd=parse(from);ui.cal={y:fd.getFullYear(),m:fd.getMonth()};
+  if(openOv==='dayOv')closeOverlay();else renderCalScreen();
 }
 /* ---------- экран задач ---------- */
 var EMPTY={day:'На этот день задач нет.',week:'На эту неделю задач нет.',month:'На этот месяц задач нет.',range:'Задач с периодом пока нет.'};
@@ -973,6 +1029,8 @@ function renderTasks(){
   var tk=ymd(today()),sc=ui.scope,d=parse(ui.tsel),lab='';
   $$('#scopeSeg button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.scope===sc))});
   $('#tNav').hidden=(sc==='range');
+  if(sc==='month'){var tdd=parse(ui.tsel);if(tdd.getFullYear()!==ui.cal.y||tdd.getMonth()!==ui.cal.m){var nn=today();ui.tsel=(nn.getFullYear()===ui.cal.y&&nn.getMonth()===ui.cal.m)?ymd(nn):ymd(new Date(ui.cal.y,ui.cal.m,1))}}
+  if(sc!=='range')renderMini();
   if(sc==='day')lab=(relDay(ui.tsel)?relDay(ui.tsel)+', ':'')+d.getDate()+' '+MONTHS_GEN[d.getMonth()];
   else if(sc==='week'){var a=parse(wkS(ui.tsel)),b=parse(wkE(ui.tsel));lab=a.getDate()+' '+MONTHS_GEN[a.getMonth()]+' — '+b.getDate()+' '+MONTHS_GEN[b.getMonth()]}
   else if(sc==='month')lab=MONTHS[d.getMonth()]+' '+d.getFullYear();
@@ -1020,10 +1078,12 @@ function addTaskInline(){
   toast('Задача добавлена','Отменить',function(){S.tasks=S.tasks.filter(function(t){return t.id!==id});tomb(id);save();refresh()});
 }
 function shiftSel(dir){
-  var d=parse(ui.tsel);
-  if(ui.scope==='day')d=addDays(d,dir);else if(ui.scope==='week')d=addDays(d,7*dir);else d=new Date(d.getFullYear(),d.getMonth()+dir,1);
-  ui.tsel=ymd(d);renderTasks();
+  var d=new Date(ui.cal.y,ui.cal.m+dir,1),n=today();
+  ui.cal={y:d.getFullYear(),m:d.getMonth()};
+  if(ui.scope==='month')ui.tsel=(d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth())?ymd(n):ymd(d);
+  renderTasks();
 }
+function pickMini(k){var d=parse(k);ui.tsel=k;ui.sel=k;ui.cal={y:d.getFullYear(),m:d.getMonth()};renderTasks()}
 /* ---------- графики ---------- */
 function bars(box,items,o){
   var W=Math.max(280,Math.floor(box.clientWidth||320)),H=o.h||200,pl=o.pl||34,pr=6,pt=18,pb=o.two?38:24,iw=W-pl-pr,ih=H-pt-pb,n=items.length,step=iw/n,bw=Math.max(3,Math.min(o.bw||30,step*0.66));
@@ -1388,6 +1448,7 @@ function showOverlay(id,focusSel){
 function openPalette(){applyPalette();showOverlay('palOv',null)}
 function closeOverlay(){
   if(!openOv)return;
+  if(openOv==='dayOv'){flushNote();ui.sheet=null}
   $('#'+openOv).hidden=true;openOv=null;document.documentElement.style.overflow='';
   if(lastFocus&&lastFocus.focus&&document.contains(lastFocus))try{lastFocus.focus()}catch(e){}
   refresh();
@@ -1767,9 +1828,10 @@ document.addEventListener('click',function(e){
   if((el=t.closest('[data-tdy]'))){moveTask(el.dataset.tdy,ymd(today()),'на сегодня');return}
   if((el=t.closest('[data-deltx]'))){deleteTx(el.dataset.deltx);return}
   if((el=t.closest('[data-evdel]'))){var id=el.dataset.evdel;S.events=S.events.filter(function(x){return x.id!==id});tomb(id);save();renderCalScreen();return}
-  if(t.closest('[data-evopen]')){ui.evOpen=!ui.evOpen;if(ui.evOpen){ui.evEnd=null;ui.evFrom=null;ui.evTitle=''}flushNote();renderDay();if(ui.evOpen){var ti=$('#evTitle');if(ti)ti.focus()}return}
-  if((el=t.closest('[data-evtype]'))){keepEv();ui.evType=el.dataset.evtype;flushNote();renderDay();var ti2=$('#evTitle');if(ti2)ti2.focus();return}
-  if(t.closest('[data-evper]')){keepEv();if(ui.evEnd){ui.evEnd=null;ui.evFrom=null}else{ui.evFrom=ui.sel;ui.evEnd=ymd(addDays(parse(ui.sel),6))}flushNote();renderDay();return}
+  if(t.closest('[data-evopen]')){openDaySheet('ev');return}
+  if(t.closest('[data-noteopen]')){openDaySheet('note');return}
+  if((el=t.closest('[data-evtype]'))){keepEv();ui.evType=el.dataset.evtype;renderDaySheet();return}
+  if(t.closest('[data-evper]')){keepEv();if(ui.evEnd){ui.evEnd=null;ui.evFrom=null}else{ui.evFrom=ui.sel;ui.evEnd=ymd(addDays(parse(ui.sel),6))}renderDaySheet();return}
   if(t.closest('#evAdd')){addEventFromPanel();return}
   if(t.closest('[data-late]')){ui.tview='list';ui.scope='day';ui.tsel=ymd(today());go('tasks');return}
   if((el=t.closest('[data-tcur]'))){moveTaskCur(el.dataset.tcur);return}
@@ -1784,6 +1846,7 @@ document.addEventListener('click',function(e){
   if(t.classList&&t.classList.contains('overlay')){closeOverlay();return}
   if((el=t.closest('[data-nav]'))){go(el.dataset.nav);return}
   if((el=t.closest('[data-day]'))){selectDay(el.dataset.day);return}
+  if((el=t.closest('[data-mday]'))){pickMini(el.dataset.mday);return}
   if((el=t.closest('[data-pal]'))){S.palette=el.dataset.pal;save();applyPalette();if(ui.screen==='tasks'||ui.screen==='focus')refresh();return}
   if((el=t.closest('[data-tv]'))){var tv=el.dataset.tv;if(tv==='focus'){go('focus');return}ui.tview=tv;if(ui.screen!=='tasks')go('tasks');else renderTasks();return}
   if((el=t.closest('[data-grv]'))){ui.gr.val=el.dataset.grv;renderGradeForm();return}
@@ -1829,7 +1892,7 @@ $('#cNext').addEventListener('click',function(){shiftCal(1)});
 $('#cToday').addEventListener('click',function(){flushNote();var n=today();ui.cal={y:n.getFullYear(),m:n.getMonth()};ui.sel=ymd(n);ui.evOpen=false;renderCalScreen()});
 $('#tPrev').addEventListener('click',function(){shiftSel(-1)});
 $('#tNext').addEventListener('click',function(){shiftSel(1)});
-$('#tToday').addEventListener('click',function(){ui.tsel=ymd(today());renderTasks()});
+$('#tToday').addEventListener('click',function(){var n=today();ui.tsel=ymd(n);ui.sel=ui.tsel;ui.cal={y:n.getFullYear(),m:n.getMonth()};renderTasks()});
 $('#mPrev').addEventListener('click',function(){var d=new Date(ui.mon.y,ui.mon.m-1,1);ui.mon={y:d.getFullYear(),m:d.getMonth()};renderMoney()});
 $('#mNext').addEventListener('click',function(){var d=new Date(ui.mon.y,ui.mon.m+1,1);ui.mon={y:d.getFullYear(),m:d.getMonth()};renderMoney()});
 $('#mLimit').addEventListener('change',function(e){var v=parseFloat(e.target.value);S.limit=(isFinite(v)&&v>0)?v:0;S.demoLimit=false;save();renderMoney()});
