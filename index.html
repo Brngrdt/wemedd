@@ -137,9 +137,9 @@ ul{padding:0;list-style:none}
 /* латинское изречение */
 .dictum{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--fg);cursor:pointer;min-width:0;padding:2px 0 2px 14px;position:relative}
 .dictum::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:2px;background:linear-gradient(var(--gold),transparent)}
-.dictum .lat{display:block;font:700 clamp(15px,4.4vw,19px)/1.22 var(--f-latin);letter-spacing:.075em;overflow-wrap:anywhere;transition:opacity .4s var(--ease)}
-.dictum .ru{display:block;color:var(--muted);font:500 12.5px/1.35 var(--f-body);margin-top:3px;transition:opacity .4s var(--ease)}
-.dictum.out .lat,.dictum.out .ru{opacity:0}
+.dictum .lat{display:block;font:700 clamp(15px,4.4vw,19px)/1.22 var(--f-latin);letter-spacing:.075em;overflow-wrap:anywhere;}
+.dictum .ru{display:block;color:var(--muted);font:500 12.5px/1.35 var(--f-body);margin-top:3px}
+.dictum.swap .lat,.dictum.swap .ru{animation:fade .45s var(--ease) both}
 
 .notice{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface);border-radius:16px;padding:9px 14px;font-size:13px;box-shadow:0 0 0 1px var(--ring)}
 .notice.bad{box-shadow:0 0 0 1px var(--bad)}
@@ -200,7 +200,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 /* календарь */
 .calwrap{display:grid;gap:18px;grid-template-columns:minmax(0,1fr);align-items:start}
 @media (min-width:900px){.calwrap{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}}
-.cal-card{--row:clamp(30px,4.5dvh,46px)}
+.cal-card{--row:clamp(36px,5.9dvh,56px)}
 .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .cal-head .nav{display:flex;align-items:center;gap:4px;min-width:0}
 .cal-head .h{min-width:0;font-size:19px;white-space:nowrap}
@@ -358,11 +358,13 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 /* окна */
 .overlay{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);z-index:30;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;animation:fade .3s var(--ease)}
 .sheet{background:var(--surface);color:var(--fg);width:100%;max-width:560px;max-height:calc(100% - 8px);overflow-y:auto;border-radius:30px 30px 0 0;padding:8px 18px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 1px 0 var(--hi),0 -24px 60px -24px var(--shadow);animation:sheet .55s var(--ease)}
+.sheet>*{flex-shrink:0}
 .sheet::before{content:'';flex:none;display:block;width:40px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 6px}
 @media (min-width:700px){.overlay{align-items:center}.sheet{border-radius:30px;max-height:90%}}
 .sh-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
 .sheet.qa{overflow:hidden}
 #qaForm{display:flex;flex-direction:column;min-height:0;flex:1}
+.qa-body>*{flex:none}
 .qa-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:2px 2px 6px}
 .qa-foot{flex:none;padding-top:10px}
 .qa-in{font-size:19px;font-weight:600;min-height:58px;border-radius:20px}
@@ -786,9 +788,10 @@ var qi=dayNum(td)%QUOTES.length,qTimer;
 function showQuote(animate){
   var box=$('#dictum');
   function set(){$('#qLat').textContent=QUOTES[qi][0];$('#qRu').textContent=QUOTES[qi][1]}
+  set();
   var calm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!animate||calm){set();return}
-  box.classList.add('out');setTimeout(function(){set();box.classList.remove('out')},300);
+  if(!animate||calm)return;
+  box.classList.remove('swap');void box.offsetWidth;box.classList.add('swap');
 }
 function nextQuote(){qi=(qi+1)%QUOTES.length;showQuote(true)}
 function startQuotes(){clearInterval(qTimer);qTimer=setInterval(nextQuote,30000)}
@@ -892,10 +895,10 @@ function renderCalGrid(){
     if(cols.length){
       var tk3=cols.slice(0,3).map(function(id){return 'var('+evtBy(id).tok+')'}),n3=tk3.length;
       var bg=n3===1?tk3[0]:'linear-gradient(135deg,'+tk3.map(function(c,j){return c+' '+(j*100/n3)+'% '+((j+1)*100/n3)+'%'}).join(',')+')';
-      style=' style="--efill:'+bg+';--eop:'+(sg.length?'.32':'.2')+'"';
+      style=' style="--efill:'+bg+';--eop:'+'.62'+'"';
     }
     var label=dn+' '+MONTHS_GEN[m]+(names.length?', '+names.join(', '):'')+(note?', есть заметка':'')+(st.total?', задач '+st.total:'');
-    var rb=(rib[k]||[]).map(function(r){return '<i class="rb'+(r.s?' s':'')+(r.e?' e':'')+'" style="--rc:var('+evtBy(r.type).tok+');--ln:'+r.lane+'"></i>'}).join('');
+    var rb='';
     h+='<button type="button" class="day'+(cols.length?' has':'')+(k===tk?' today':'')+(k===ui.sel?' sel':'')+'" data-day="'+k+'"'+style+' aria-label="'+esc(label)+'"'+(k===ui.sel?' aria-pressed="true"':'')+'><span class="n">'+dn+'</span>'+rb+(note?'<i class="nt"></i>':'')+'</button>';
   }
   $('#cGrid').innerHTML=h;
@@ -919,7 +922,7 @@ function renderDay(){
   if(ev.length)h+='<div class="evchips">'+ev.map(function(e){var t=evtBy(e.type);return '<span class="evchip" style="--c:var('+t.tok+')"><i class="dot"></i><span><b>'+esc(t.name)+'</b>'+(e.title?': '+esc(e.title):'')+(e.end?' <small>'+esc(rangeText(e.date,e.end))+'</small>':'')+'</span><button type="button" class="del" data-evdel="'+e.id+'" aria-label="Убрать отметку">&times;</button></span>'}).join('')+'</div>';
   var rows=tasks.concat(run);
   h+=rows.length?'<ul>'+rows.map(function(t){return taskRow(t,{compact:true})}).join('')+'</ul>':(ev.length?'':'<p class="empty"><b>Дел на этот день нет.</b> Нажмите «+» внизу и впишите, что нужно сделать.</p>');
-  h+='</div><textarea id="noteArea" class="note-in" rows="1" maxlength="2000" placeholder="Заметка к этому дню…" aria-label="Заметка"></textarea></div>';
+  h+='<textarea id="noteArea" class="note-in" rows="1" maxlength="2000" placeholder="Заметка к этому дню…" aria-label="Заметка"></textarea></div></div>';
   $('#dayPanel').innerHTML=h;
   noteKey=k;var ta=$('#noteArea');ta.value=S.notes[k]||'';
 }
