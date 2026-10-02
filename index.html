@@ -417,9 +417,98 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
 .big-in{min-height:58px;font-size:17px;font-weight:600;border-radius:20px;padding:0 18px}
 .big-btn{min-height:58px;font-size:16px;width:100%}
 .note-big{min-height:min(220px,38dvh);height:min(220px,38dvh);resize:none;border-radius:20px;padding:14px 16px;font-size:16.5px;line-height:1.5}
-.note-btn{display:block;width:100%;text-align:left;margin:2px 0 8px;border:0;background:var(--bg);color:var(--muted);border-radius:16px;padding:12px 14px;min-height:40px;font:500 13.5px/1.35 var(--f-body);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.note-btn{display:block;width:100%;text-align:left;margin:2px 0 8px;border:0;background:var(--bg);color:var(--muted);border-radius:16px;padding:12px 14px;min-height:40px;font:500 13.5px/1.35 var(--f-body);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;word-break:break-word}
 .note-btn.has{color:var(--fg)}
 @media (max-width:899px){body[data-screen="cal"] .calwrap{align-items:stretch}body[data-screen="cal"] .cal-card{width:100%}}
+
+/* дополнительные темы */
+:root[data-palette="lavanda"]{
+  --bg:#EEEAF4; --surface:#FAF8FD; --surface2:#DED7EA; --fg:#221C30; --muted:#6A6180; --line:#D8CFE6;
+  --accent:#5B3FA0; --accent-fg:#FAF8FD; --accent-soft:#E4DBF3; --gold:#A98430;
+  --good:#2F7A4B; --warn:#9A6A12; --bad:#A63A45;
+  --shadow:rgba(34,28,48,0.2); --scrim:rgba(34,28,48,0.5);
+  --shell:rgba(91,63,160,0.06); --ring:rgba(34,28,48,0.1); --hi:rgba(255,255,255,.75); --glow:rgba(91,63,160,0.1);
+  --c1:#5B4B8A; --c2:#A33B4C; --c3:#2D6C8F; --c4:#A8782A; --c5:#3E7D4F; --c6:#7A7163; --c7:#2A7F80;
+}
+:root[data-palette="more"]{
+  --bg:#E6EEEF; --surface:#F6FAFA; --surface2:#D2E1E3; --fg:#14292E; --muted:#55727A; --line:#C4D8DB;
+  --accent:#0F6B7A; --accent-fg:#F6FAFA; --accent-soft:#D3E9EC; --gold:#A9822E;
+  --good:#2F7A4B; --warn:#9A6A12; --bad:#A63A45;
+  --shadow:rgba(20,41,46,0.2); --scrim:rgba(20,41,46,0.5);
+  --shell:rgba(15,107,122,0.06); --ring:rgba(20,41,46,0.1); --hi:rgba(255,255,255,.75); --glow:rgba(15,107,122,0.1);
+  --c1:#5B4B8A; --c2:#A33B4C; --c3:#2D6C8F; --c4:#A8782A; --c5:#3E7D4F; --c6:#7A7163; --c7:#2A7F80;
+}
+:root[data-palette="pion"]{
+  --bg:#F3E8EA; --surface:#FCF7F8; --surface2:#E8D3D8; --fg:#2B1A20; --muted:#7B5D66; --line:#E3CBD1;
+  --accent:#B04A6B; --accent-fg:#FCF7F8; --accent-soft:#F2D8E0; --gold:#A98430;
+  --good:#2F7A4B; --warn:#9A6A12; --bad:#A63A45;
+  --shadow:rgba(43,26,32,0.2); --scrim:rgba(43,26,32,0.5);
+  --shell:rgba(176,74,107,0.06); --ring:rgba(43,26,32,0.1); --hi:rgba(255,255,255,.75); --glow:rgba(176,74,107,0.1);
+  --c1:#5B4B8A; --c2:#A33B4C; --c3:#2D6C8F; --c4:#A8782A; --c5:#3E7D4F; --c6:#7A7163; --c7:#2A7F80;
+}
+:root[data-palette="med"]{
+  --bg:#F3EBD8; --surface:#FBF7EC; --surface2:#E8DCBE; --fg:#2A2210; --muted:#7A6A45; --line:#E0D2AE;
+  --accent:#8F5F12; --accent-fg:#FBF7EC; --accent-soft:#F0E1B8; --gold:#6E7F4A;
+  --good:#2F7A4B; --warn:#9A6A12; --bad:#A63A45;
+  --shadow:rgba(42,34,16,0.2); --scrim:rgba(42,34,16,0.5);
+  --shell:rgba(143,95,18,0.06); --ring:rgba(42,34,16,0.1); --hi:rgba(255,255,255,.75); --glow:rgba(143,95,18,0.1);
+  --c1:#5B4B8A; --c2:#A33B4C; --c3:#2D6C8F; --c4:#A8782A; --c5:#3E7D4F; --c6:#7A7163; --c7:#2A7F80;
+}
+:root[data-palette="stal"]{
+  --bg:#ECEEF0; --surface:#F9FAFB; --surface2:#DCDFE3; --fg:#16191D; --muted:#5D6570; --line:#D0D4DA;
+  --accent:#2F3B52; --accent-fg:#F9FAFB; --accent-soft:#DDE2EC; --gold:#A58433;
+  --good:#2F7A4B; --warn:#9A6A12; --bad:#A63A45;
+  --shadow:rgba(22,25,29,0.2); --scrim:rgba(22,25,29,0.5);
+  --shell:rgba(47,59,82,0.06); --ring:rgba(22,25,29,0.1); --hi:rgba(255,255,255,.75); --glow:rgba(47,59,82,0.1);
+  --c1:#5B4B8A; --c2:#A33B4C; --c3:#2D6C8F; --c4:#A8782A; --c5:#3E7D4F; --c6:#7A7163; --c7:#2A7F80;
+}
+:root[data-palette="safir"]{
+  --bg:#08141F; --surface:#0F1F2E; --surface2:#182E42; --fg:#E4EEF6; --muted:#8AA3B8; --line:#223A50;
+  --accent:#5CC4E8; --accent-fg:#06202E; --accent-soft:#17354A; --gold:#E0BC72;
+  --good:#6FCB91; --warn:#E3B75B; --bad:#F28B9B;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(8,20,31,0.7);
+  --shell:rgba(92,196,232,0.07); --ring:rgba(255,255,255,.08); --hi:rgba(255,255,255,.06); --glow:rgba(92,196,232,0.12);
+  --c1:#B0A3F0; --c2:#F08FA0; --c3:#6DB8E8; --c4:#E0B466; --c5:#78C99A; --c6:#B9B6C9; --c7:#6CCBC8;
+  color-scheme:dark;
+}
+:root[data-palette="sliva"]{
+  --bg:#170F1E; --surface:#211729; --surface2:#2F2139; --fg:#F1E8F6; --muted:#A992B8; --line:#38274A;
+  --accent:#D9A5F0; --accent-fg:#2A1236; --accent-soft:#3A2548; --gold:#E3C27F;
+  --good:#6FCB91; --warn:#E3B75B; --bad:#F28B9B;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(23,15,30,0.7);
+  --shell:rgba(217,165,240,0.07); --ring:rgba(255,255,255,.08); --hi:rgba(255,255,255,.06); --glow:rgba(217,165,240,0.12);
+  --c1:#B0A3F0; --c2:#F08FA0; --c3:#6DB8E8; --c4:#E0B466; --c5:#78C99A; --c6:#B9B6C9; --c7:#6CCBC8;
+  color-scheme:dark;
+}
+:root[data-palette="kofe"]{
+  --bg:#17110D; --surface:#211912; --surface2:#30241A; --fg:#F3EADF; --muted:#AE9A84; --line:#3B2D20;
+  --accent:#E2B27A; --accent-fg:#2A1A0A; --accent-soft:#3A2B1B; --gold:#9FCB9A;
+  --good:#6FCB91; --warn:#E3B75B; --bad:#F28B9B;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(23,17,13,0.7);
+  --shell:rgba(226,178,122,0.07); --ring:rgba(255,255,255,.08); --hi:rgba(255,255,255,.06); --glow:rgba(226,178,122,0.12);
+  --c1:#B0A3F0; --c2:#F08FA0; --c3:#6DB8E8; --c4:#E0B466; --c5:#78C99A; --c6:#B9B6C9; --c7:#6CCBC8;
+  color-scheme:dark;
+}
+:root[data-palette="koral"]{
+  --bg:#050506; --surface:#0F0F12; --surface2:#1B1B20; --fg:#F2F2F4; --muted:#8E8E98; --line:#26262D;
+  --accent:#FF8A5C; --accent-fg:#2A0F04; --accent-soft:#2E1B12; --gold:#E8C27A;
+  --good:#6FCB91; --warn:#E3B75B; --bad:#F28B9B;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(5,5,6,0.7);
+  --shell:rgba(255,138,92,0.07); --ring:rgba(255,255,255,.08); --hi:rgba(255,255,255,.06); --glow:rgba(255,138,92,0.12);
+  --c1:#B0A3F0; --c2:#F08FA0; --c3:#6DB8E8; --c4:#E0B466; --c5:#78C99A; --c6:#B9B6C9; --c7:#6CCBC8;
+  color-scheme:dark;
+}
+:root[data-palette="oliva"]{
+  --bg:#12150C; --surface:#1B2013; --surface2:#272E1B; --fg:#EEF0E0; --muted:#A0A885; --line:#333B24;
+  --accent:#C8D96A; --accent-fg:#1A2008; --accent-soft:#2D3519; --gold:#E6BF7A;
+  --good:#6FCB91; --warn:#E3B75B; --bad:#F28B9B;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(18,21,12,0.7);
+  --shell:rgba(200,217,106,0.07); --ring:rgba(255,255,255,.08); --hi:rgba(255,255,255,.06); --glow:rgba(200,217,106,0.12);
+  --c1:#B0A3F0; --c2:#F08FA0; --c3:#6DB8E8; --c4:#E0B466; --c5:#78C99A; --c6:#B9B6C9; --c7:#6CCBC8;
+  color-scheme:dark;
+}
+
+.pal-lab{grid-column:1/-1;font:700 10.5px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:6px 2px -4px}
 
 </style>
 </head>
@@ -472,7 +561,7 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
             <button type="button" data-scope="range" aria-pressed="false">Период</button>
           </div>
           <div id="tNav" class="mini">
-            <div class="mc-head"><div class="nav"><button type="button" class="ic" id="tPrev" aria-label="Предыдущий месяц">&#8249;</button><strong id="mLabel"></strong><button type="button" class="ic" id="tNext" aria-label="Следующий месяц">&#8250;</button></div><button type="button" class="btn ghost sm" id="tToday">Сегодня</button></div>
+            <div class="mc-head"><div class="nav"><button type="button" class="ic" id="tPrev" aria-label="Предыдущий месяц">&#8249;</button><strong id="mcLabel"></strong><button type="button" class="ic" id="tNext" aria-label="Следующий месяц">&#8250;</button></div><button type="button" class="btn ghost sm" id="tToday">Сегодня</button></div>
             <div class="cal" aria-hidden="true"><div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div><div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div></div>
             <div class="cal" id="mGrid"></div>
             <p class="mc-lab"><span id="tLabel"></span></p>
@@ -674,7 +763,7 @@ var GVALS=['5','4','3','2','зачёт','незачёт'],GKINDS=['Экзаме�
 var GCOL={'5':'--good','4':'--c3','3':'--warn','2':'--bad','зачёт':'--good','незачёт':'--bad'};
 var PRI={1:'обычная',2:'важная',3:'срочно'};
 var PRESETS=[{f:25,b:5},{f:45,b:10},{f:15,b:3},{f:60,b:10}];
-var PAL=[{id:'ivory',name:'Слоновая кость',a:'#F2EDE3',b:'#1E5B4D',g:'#A7822E'},{id:'granat',name:'Гранат',a:'#F5EAE7',b:'#8C1D3B',g:'#B08535'},{id:'indigo',name:'Индиго',a:'#EBEEF6',b:'#2D3D8E',g:'#B08A32'},{id:'shalfey',name:'Шалфей',a:'#E9EDE4',b:'#B1512E',g:'#9F7E2B'},{id:'izumrud',name:'Ночной изумруд',a:'#0C1815',b:'#D6B26B',g:'#76BE8E'},{id:'polnoch',name:'Полночь',a:'#0F1229',b:'#9DB1FF',g:'#E3BE7A'},{id:'burgundy',name:'Бургунди',a:'#1B0E14',b:'#E9B5A2',g:'#DDB97F'},{id:'grafit',name:'Графит',a:'#111417',b:'#5ECDAE',g:'#D8B97A'}];
+var PAL=[{id:'ivory',name:'Слоновая кость',a:'#F2EDE3',b:'#1E5B4D',g:'#A7822E'},{id:'granat',name:'Гранат',a:'#F5EAE7',b:'#8C1D3B',g:'#B08535'},{id:'indigo',name:'Индиго',a:'#EBEEF6',b:'#2D3D8E',g:'#B08A32'},{id:'shalfey',name:'Шалфей',a:'#E9EDE4',b:'#B1512E',g:'#9F7E2B'},{id:'izumrud',name:'Ночной изумруд',a:'#0C1815',b:'#D6B26B',g:'#76BE8E'},{id:'polnoch',name:'Полночь',a:'#0F1229',b:'#9DB1FF',g:'#E3BE7A'},{id:'burgundy',name:'Бургунди',a:'#1B0E14',b:'#E9B5A2',g:'#DDB97F'},{id:'grafit',name:'Графит',a:'#111417',b:'#5ECDAE',g:'#D8B97A'},{id:'lavanda',name:'Лаванда',a:'#EEEAF4',b:'#5B3FA0',g:'#A98430'},{id:'more',name:'Море',a:'#E6EEEF',b:'#0F6B7A',g:'#A9822E'},{id:'pion',name:'Пион',a:'#F3E8EA',b:'#B04A6B',g:'#A98430'},{id:'med',name:'Мёд',a:'#F3EBD8',b:'#8F5F12',g:'#6E7F4A'},{id:'stal',name:'Сталь',a:'#ECEEF0',b:'#2F3B52',g:'#A58433'},{id:'safir',name:'Сапфир',a:'#08141F',b:'#5CC4E8',g:'#E0BC72'},{id:'sliva',name:'Слива',a:'#170F1E',b:'#D9A5F0',g:'#E3C27F'},{id:'kofe',name:'Кофе',a:'#17110D',b:'#E2B27A',g:'#9FCB9A'},{id:'koral',name:'Уголь и коралл',a:'#050506',b:'#FF8A5C',g:'#E8C27A'},{id:'oliva',name:'Олива',a:'#12150C',b:'#C8D96A',g:'#E6BF7A'}];
 var OLDPAL={laguna:'ivory',sumerki:'polnoch',hvoya:'izumrud',lavanda:'indigo',persik:'shalfey',okean:'grafit',bordo:'burgundy'};
 
 var fmtRub;try{fmtRub=new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB',minimumFractionDigits:0,maximumFractionDigits:2})}catch(e){fmtRub=null}
@@ -809,7 +898,9 @@ function applyPalette(){
   if(S.palette)r.setAttribute('data-palette',S.palette);else r.removeAttribute('data-palette');
   var cur=S.palette;
   if(!cur){var th=r.getAttribute('data-theme'),dark=th==='dark'||(th!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);cur=dark?'polnoch':'ivory'}
-  $('#pal').innerHTML=PAL.map(function(p){return '<button type="button" class="sw" data-pal="'+p.id+'" aria-pressed="'+(p.id===cur)+'" aria-label="Тема «'+p.name+'»"><i style="background:linear-gradient(135deg,'+p.a+' 50%,'+p.b+' 50%);--g:'+p.g+'"></i>'+p.name+'</button>'}).join('');
+  function lum(h){var n=parseInt(h.slice(1),16);return ((n>>16&255)*.3+(n>>8&255)*.59+(n&255)*.11)/255}
+  function sw(p){return '<button type="button" class="sw" data-pal="'+p.id+'" aria-pressed="'+(p.id===cur)+'" aria-label="Тема «'+p.name+'»"><i style="background:linear-gradient(135deg,'+p.a+' 50%,'+p.b+' 50%);--g:'+p.g+'"></i>'+p.name+'</button>'}
+  $('#pal').innerHTML='<div class="pal-lab">Светлые</div>'+PAL.filter(function(p){return lum(p.a)>=.4}).map(sw).join('')+'<div class="pal-lab">Тёмные</div>'+PAL.filter(function(p){return lum(p.a)<.4}).map(sw).join('');;
   setTimeout(function(){try{var bg=getComputedStyle(r).getPropertyValue('--bg').trim(),m=document.querySelector('meta[name=theme-color]');if(m&&bg)m.setAttribute('content',bg)}catch(e){}},0);
 }
 var qi=dayNum(td)%QUOTES.length,qTimer;
@@ -937,7 +1028,7 @@ function renderCalGrid(){
 }
 function renderMini(){
   var y=ui.cal.y,m=ui.cal.m,sc=ui.scope,dots={};
-  $('#mLabel').textContent=MONTHS[m]+' '+y;
+  $('#mcLabel').textContent=MONTHS[m]+' '+y;
   S.tasks.forEach(function(t){if(t.done)return;if(t.scope==='day')dots[t.date]=1;else if(t.scope==='range'){for(var d=parse(t.date),n=0;ymd(d)<=t.end&&n<400;d=addDays(d,1),n++)dots[ymd(d)]=1}});
   $('#mGrid').innerHTML=calHtml(y,m,{sel:sc==='month'?null:ui.tsel,attr:'data-mday',dots:dots,wk:sc==='week'?[wkS(ui.tsel),wkE(ui.tsel)]:null});
 }
