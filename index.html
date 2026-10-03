@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F2EDE3">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <meta name="description" content="WeMed — планнер для учёбы, работы и жизни: календарь, задачи, оценки, финансы, фокус-таймер.">
 <title>WeMed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -391,6 +393,8 @@ details.data textarea{margin-top:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,
 .sdot[data-s="sync"]{display:block;background:var(--warn)}
 .sdot[data-s="err"]{display:block;background:var(--bad)}
 .acform{display:flex;flex-direction:column;gap:12px}
+.acor{display:flex;align-items:center;gap:10px;margin:14px 0 8px;color:var(--muted);font-size:13px}.acor::before,.acor::after{content:'';flex:1;height:1px;background:var(--line,rgba(128,128,128,.25))}
+.tgbox{display:flex;justify-content:center;align-items:center;min-height:48px}
 .acmsg{font-size:14px;min-height:20px}.acmsg.bad{color:var(--bad)}.acmsg.ok{color:var(--good)}
 .acstat{background:var(--bg);border-radius:20px;padding:14px;font-size:14px}
 
@@ -954,9 +958,11 @@ function seedData(){
 }
 
 var TGW=(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)?window.Telegram.WebApp:null,CS=null,user=null,syncState='out',lastSync=null,pushT,busy=false,again=false,localV=0,sync={uid:null,rev:null,dirty:false,force:false};
+var CFG=window.WEMED_CONFIG||{},SB=null,SBU=null,sbFailAt=0;
 var SYNC_DELAY=1500;
-try{var _sr=JSON.parse(localStorage.getItem('wemed.sync')||'{}');sync.uid=_sr.uid||null;sync.rev=(_sr.rev==null?null:_sr.rev);sync.dirty=!!_sr.dirty;sync.force=!!_sr.force}catch(e){}
+try{var _sr=JSON.parse(localStorage.getItem('wemed.sync')||'{}');sync.uid=_sr.uid||null;sync.rev=(_sr.rev==null?null:_sr.rev);sync.dirty=!!_sr.dirty;sync.force=!!_sr.force;sync.be=_sr.be||null}catch(e){}
 try{if(TGW&&TGW.CloudStorage&&(!TGW.isVersionAtLeast||TGW.isVersionAtLeast('6.9'))){CS=TGW.CloudStorage;user=(TGW.initDataUnsafe&&TGW.initDataUnsafe.user)||{id:0}}}catch(e){CS=null;user=null}
+try{if(CS&&CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY&&window.supabase)SB=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}})}catch(e){SB=null}
 function saveSync(){try{localStorage.setItem('wemed.sync',JSON.stringify(sync))}catch(e){}}
 var S=load();
 if(!S){S=seedData();save()}
@@ -2019,7 +2025,7 @@ function cloudWrite(data,rev,oldN){
   }).then(function(){return n});
 }
 var lastErr='';
-function runSync(n){
+function runSyncCS(n){
   var vNow=localV;
   return cloudRead().then(function(row){
     var needPush=false,changed=false,baseRev=row?row.rev:0;
@@ -2033,18 +2039,74 @@ function runSync(n){
     if(!needPush){sync.rev=baseRev;return changed}
     return cloudMeta().then(function(cur){
       var curRev=cur?cur.rev:0;
-      if(curRev!==baseRev&&!sync.force){sync.rev=baseRev;sync.dirty=true;if(n<3)return runSync(n+1);throw new Error('conflict')}
+      if(curRev!==baseRev&&!sync.force){sync.rev=baseRev;sync.dirty=true;if(n<3)return runSyncCS(n+1);throw new Error('conflict')}
       return cloudWrite(payload(),baseRev+1,row?row.n:0).then(function(){
         sync.rev=baseRev+1;sync.force=false;sync.dirty=(vNow!==localV);return changed;
       });
     });
   });
 }
+/* Облако сайта (Supabase): вход по подписи Telegram, тот же аккаунт, что и «Войти через Telegram» на сайте */
+function sbLogin(){
+  return fetch(CFG.SUPABASE_URL.replace(/\/+$/,'')+'/functions/v1/telegram-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.SUPABASE_ANON_KEY},body:JSON.stringify({initData:TGW.initData})})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,j:j}})})
+    .then(function(x){if(!x.ok||!x.j.token_hash)throw new Error(x.j&&x.j.error||'login');return SB.auth.verifyOtp({token_hash:x.j.token_hash,type:'magiclink'})})
+    .then(function(r){if(r.error||!r.data||!r.data.user)throw (r.error||new Error('no user'));SBU=r.data.user;return true});
+}
+function sbEnsure(){
+  if(!SB||!CS||!TGW||!TGW.initData)return Promise.resolve(false);
+  if(SBU)return Promise.resolve(true);
+  if(Date.now()-sbFailAt<60000)return Promise.resolve(false);
+  var tid=String(user&&user.id||'');
+  return SB.auth.getSession().then(function(r){
+    var s=r&&r.data&&r.data.session;
+    if(s&&s.user&&s.user.app_metadata&&String(s.user.app_metadata.tg_id)===tid){SBU=s.user;return true}
+    return (s?SB.auth.signOut().catch(function(){}):Promise.resolve()).then(sbLogin);
+  }).catch(function(e){sbFailAt=Date.now();lastErr='sb:'+String(e&&e.message||e);return false});
+}
+function runSB(n){
+  var uid=SBU.id,vNow=localV;
+  return SB.from('user_data').select('data,rev').eq('user_id',uid).maybeSingle().then(function(r){
+    if(r.error)throw r.error;
+    var row=r.data,needPush=false,changed=false;
+    vNow=localV;
+    if(!row){
+      return SB.from('user_data').insert({user_id:uid,data:payload()}).select('rev').single().then(function(x){
+        if(x.error){if(n<3)return runSB(n+1);throw x.error}
+        sync.uid=uid;sync.rev=x.data.rev;sync.force=false;sync.dirty=(vNow!==localV);return false;
+      });
+    }
+    if(sync.force){needPush=true}
+    else if(sync.uid&&sync.uid!==uid){S=normalize({});adopt(row.data);changed=true;sync.dirty=false}
+    else if(!sync.uid){if(hasOwn()){mergeIn(row.data);needPush=true}else{adopt(row.data);sync.dirty=false}changed=true}
+    else if(row.rev===sync.rev){needPush=sync.dirty}
+    else if(sync.dirty){mergeIn(row.data);needPush=true;changed=true}
+    else{adopt(row.data);changed=true}
+    sync.uid=uid;
+    if(!needPush){sync.rev=row.rev;return changed}
+    var q=SB.from('user_data').update({data:payload(),rev:row.rev+1}).eq('user_id',uid);
+    if(!sync.force)q=q.eq('rev',row.rev);
+    return q.select('rev').then(function(x){
+      if(x.error)throw x.error;
+      if(!x.data||!x.data.length){sync.rev=null;sync.dirty=true;if(n<3)return runSB(n+1);throw new Error('conflict')}
+      sync.rev=x.data[0].rev;sync.force=false;sync.dirty=(vNow!==localV);return changed;
+    });
+  });
+}
+function runSyncSB(){
+  var pre=Promise.resolve();
+  if(sync.be!=='sb'){
+    /* первый вход в облако сайта: подтягиваем прежние данные из облака Telegram и сливаем с аккаунтом */
+    pre=cloudRead().then(function(row){if(row&&row.data){mergeIn(row.data);rawSave()}}).catch(function(){});
+    sync.uid=null;sync.rev=null;
+  }
+  return pre.then(function(){return runSB(0)}).then(function(ch){sync.be='sb';return ch});
+}
 function syncNow(){
   if(!CS||!user)return Promise.resolve();
   if(busy){again=true;return Promise.resolve()}
   busy=true;setSync('sync');
-  return runSync(0).then(function(changed){
+  return sbEnsure().then(function(useSB){return useSB?runSyncSB():runSyncCS(0)}).then(function(changed){
     saveSync();rawSave();lastErr='';lastSync=new Date();setSync('ok');
     if(changed){applyPalette();var a=document.activeElement;if(!(a&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT')))refresh()}
   }).catch(function(e){lastErr=String(e&&e.message||e);setSync('err')}).then(function(){busy=false;if(again){again=false;schedulePush()}});
@@ -2065,7 +2127,7 @@ function renderAccount(){
   if(syncState==='err'&&lastErr==='too_big')st='Данных слишком много для облака Telegram. Сделайте резервную копию и удалите старые записи.';
   h='<div class="acstat"><span class="eyebrow">Аккаунт Telegram</span><div style="font-weight:600;margin:4px 0 8px;overflow-wrap:anywhere">'+esc(nm)+'</div><span class="'+(syncState==='err'?'neg':syncState==='ok'?'pos':'')+'">'+esc(st)+'</span></div>'
    +'<div class="row" style="margin-top:12px"><button type="button" class="btn ghost" data-acsync>Синхронизировать сейчас</button></div>'
-   +'<p class="sub" style="margin-top:12px">Данные хранятся в облаке Telegram и привязаны к вашему аккаунту. Вход и пароль не нужны. На другом устройстве достаточно открыть этого же бота.</p>';
+   +(SBU?'<p class="sub" style="margin-top:12px">Данные хранятся в вашем аккаунте WeMed и совпадают с сайтом: на сайте нажмите «Войти через Telegram». Пароль не нужен. На другом устройстве достаточно открыть этого же бота.</p>':'<p class="sub" style="margin-top:12px">Данные хранятся в облаке Telegram и привязаны к вашему аккаунту. Вход и пароль не нужны. На другом устройстве достаточно открыть этого же бота.</p>');
   b.innerHTML=h;
 }
 function openAccount(){renderAccount();showOverlay('acOv',null)}
