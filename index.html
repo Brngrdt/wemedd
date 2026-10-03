@@ -973,6 +973,25 @@ var SYNC_DELAY=1500;
 try{var _sr=JSON.parse(localStorage.getItem('wemed.sync')||'{}');sync.uid=_sr.uid||null;sync.rev=(_sr.rev==null?null:_sr.rev);sync.dirty=!!_sr.dirty;sync.force=!!_sr.force;sync.be=_sr.be||null}catch(e){}
 try{if(TGW&&TGW.CloudStorage&&(!TGW.isVersionAtLeast||TGW.isVersionAtLeast('6.9'))){CS=TGW.CloudStorage;user=(TGW.initDataUnsafe&&TGW.initDataUnsafe.user)||{id:0}}}catch(e){CS=null;user=null}
 try{if(CS&&CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY&&window.supabase)SB=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}})}catch(e){SB=null}
+/* Лёгкая статистика: только счётчики (платформа и какие разделы открывали), без содержимого записей */
+var TRK={f:{},last:0,busy:false,plat:'site',first:true};
+function trkFeat(n){if(/^(cal|tasks|habits|sport|grades|money|focus)$/.test(n))TRK.f[n]=(TRK.f[n]||0)+1}
+function trkTick(){try{trkTick2()}catch(e){TRK.busy=false;TRK.last=Date.now()}}
+function trkTick2(){
+  var cl=(typeof trkClient==='function')?trkClient():null;
+  if(!cl||TRK.busy)return;
+  var has=false,k;for(k in TRK.f){has=true;break}
+  if(!has&&TRK.last&&Date.now()-TRK.last<300000)return;
+  var f=TRK.f,op=TRK.first;TRK.f={};TRK.busy=true;
+  Promise.resolve(cl.rpc('track',{p_platform:TRK.plat,p_feats:f,p_open:op})).then(function(r){
+    TRK.busy=false;TRK.last=Date.now();
+    if(r&&r.error)throw r.error;
+    TRK.first=false;
+  }).catch(function(){
+    TRK.busy=false;TRK.last=Date.now();
+    for(var k in f)TRK.f[k]=(TRK.f[k]||0)+f[k];
+  });
+}
 function saveSync(){try{localStorage.setItem('wemed.sync',JSON.stringify(sync))}catch(e){}}
 var S=load();
 if(!S){S=seedData();save()}
@@ -1773,7 +1792,7 @@ function refresh(){
   
 }
 function go(name){
-  flushNote();ui.screen=name;
+  flushNote();ui.screen=name;trkFeat(name);
   $$('.screen').forEach(function(s){s.hidden=(s.id!=='s-'+name)});
   try{window.scrollTo(0,0)}catch(e){}
   refresh();
@@ -2003,6 +2022,8 @@ function mergeIn(rd){
   R.demoNotes.forEach(function(x){if(L.demoNotes.indexOf(x)<0)L.demoNotes.push(x)});
   L.del=del;
 }
+TRK.plat='bot';
+function trkClient(){return SB&&SBU?SB:null}
 var CHUNK=2000,MAXKEYS=1000;
 /* обёртки над CloudStorage */
 function csCall(fn){return new Promise(function(res,rej){var done=false,t=setTimeout(function(){if(!done){done=true;rej(new Error('timeout'))}},15000);fn(function(err,val){if(done)return;done=true;clearTimeout(t);if(err)rej(new Error(String(err)));else res(val)})})}
@@ -2132,6 +2153,7 @@ function syncNow(){
   busy=true;setSync('sync');
   return sbEnsure().then(function(useSB){return useSB?runSyncSB():runSyncCS(0)}).then(function(changed){
     saveSync();rawSave();lastErr='';lastSync=new Date();setSync('ok');
+    trkTick();
     if(changed){applyPalette();var a=document.activeElement;if(!(a&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT')))refresh()}
   }).catch(function(e){lastErr=String(e&&e.message||e);setSync('err')}).then(function(){busy=false;if(again){again=false;schedulePush()}});
 }
